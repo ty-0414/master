@@ -1,0 +1,138 @@
+function main(){
+  var today = new Date();
+  var weekday = today.getDay();
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getActiveSheet();
+  var lastRow = sh.getLastRow();
+
+  for(var i = 2; i <= lastRow; i++){
+
+    var post_frequency = sh.getRange(i, 1).getValue();
+
+    if(post_frequency == '日次'){
+      daily_post(sh, i);
+    }else if(post_frequency == '週次'){
+      weekly_post(sh, i);
+    }else if(post_frequency == '月次'){
+      monthly_post(sh, i);
+    }
+
+  }//for
+
+}//main------------------------------------------------------------------
+
+function daily_post(sheetObject, rowIndex){
+
+  var sh = sheetObject;
+
+  var today = new Date();
+  var weekday = today.getDay();
+  var hour = today.getHours();
+
+  var hour_condition = sh.getRange(rowIndex, 3).getValue();
+
+  if(hour_condition == hour){
+
+    if(weekday != 1 && weekday != 0){
+
+      var msg = create_msg(sh, rowIndex);
+      postRocketChat(msg);
+
+    }//if weekday
+
+  }//if hour
+
+}//daily------------------------------------------------------------------
+
+function weekly_post(sheetObject, rowIndex){
+
+  var sh = sheetObject;
+
+  var today = new Date();
+  var weekday = today.getDay();
+  var hour = today.getHours();
+
+  var weekday_array = {
+  '月': 1,
+  '火': 2,
+  '水': 3,
+  '木': 4,
+  '金': 5,
+  '土': 6,
+  '日': 0
+}
+
+  var hour_condition = sh.getRange(rowIndex, 3).getValue();
+  var weekday_condition = sh.getRange(rowIndex, 2).getValue();
+  var weekday_condition_int = weekday_array[weekday_condition];
+
+  if(weekday_condition_int == weekday){
+
+    if(hour_condition == hour){
+
+      var msg = create_msg(sh, rowIndex);
+      postRocketChat(msg);
+
+    }//if weekday
+
+  }//if hour
+
+}//daily------------------------------------------------------------------
+
+function monthly_post(sheetObject, rowIndex){
+
+  var sh = sheetObject;
+
+  var today = new Date();
+  var weekday = today.getDay();
+  var day = today.getDate();
+  var hour = today.getHours();
+  var m = Moment.moment();
+  var eomonth = m.endOf('month').format("D");
+
+  var hour_condition = sh.getRange(rowIndex, 3).getValue();
+  var day_condition = sh.getRange(rowIndex, 4).getValue();
+    if(day_condition == '末日'){
+      day_condition = eomonth;
+    }
+
+  if(day_condition == day){
+
+    if(hour_condition == hour){
+
+      var msg = create_msg(sh, rowIndex);
+      postRocketChat(msg);
+
+    }//if weekday
+
+  }//if hour
+
+}//monthly------------------------------------------------------------------
+
+function create_msg(sheet_object, rowIndex){
+
+  var mention_at = sheet_object.getRange(rowIndex, 5).getValue();
+  var message_text = sheet_object.getRange(rowIndex, 6).getValue();
+
+  var post_message = '\n' + mention_at + '\n' + message_text;
+
+  return post_message;
+
+}//create_msg---------------------------------------------------------------
+
+function postRocketChat(txt){
+
+  var rocket_url = "*WebhookUrl*";
+  var channel = "#aff-bot";
+
+  var option = JSON.stringify({
+    "channel": channel,
+    "avatar": "*AvatarUrl*",
+    "text":txt
+  });
+
+  UrlFetchApp.fetch(rocket_url, {payload: option});
+
+}//postRocketChat
+//------------------------------------------------------------------------
